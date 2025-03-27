@@ -19,6 +19,10 @@ const gtmPlanContent = record?.getCellValue("GTM Plan") || "";
 console.log("Response content length:", responseContent.length);
 console.log("GTM Plan content length:", gtmPlanContent.length);
 
+// Get the Campaigns table
+const campaignsTable = base.getTable("Campaigns");
+console.log("Campaigns table retrieved:", campaignsTable.name);
+
 // Split content into manageable chunks to avoid timeouts
 async function processInChunks() {
     try {
@@ -32,10 +36,12 @@ async function processInChunks() {
             "Substack Article", 
             "LinkedIn Post",
             "Newsletter Mention",
-            "Outreach Templates"
+            "Outreach Templates",
+            "Telegram Post"
         ];
         
-        let allGeneratedContent = "";
+        // Object to store each asset's content
+        const generatedAssets = {};
         
         // Process each asset type separately
         for (let i = 0; i < marketingAssets.length; i++) {
@@ -53,7 +59,7 @@ GTM Plan Content:
 ${gtmPlanContent}`;
             
             // Define your Anthropic API key and endpoint
-            const anthropicApiKey = "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";
+            const anthropicApiKey = "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"; // Replace with your actual API key
             const apiEndpoint = "https://api.anthropic.com/v1/messages";
             
             // Set up the request payload for this specific asset
@@ -71,8 +77,9 @@ For reference:
 - If it's a **LinkedIn Post**: Provide text appropriate for LinkedIn format.
 - If it's a **Newsletter Mention**: Provide a snippet for a newsletter.
 - If it's an **Outreach Template**: Provide email/DM sample for influencers or partners.
+- If it's a **Telegram Post**: Provide an announcement post for our community. Make it exciting and use a few relevant emojis.
 
-For any tweets: NO hashtags; NO URLs in first tweet.`,
+For any tweets or telegram posts: NO hashtags; NO URLs in first tweet.`,
                 messages: [
                     {
                         role: "user",
@@ -116,24 +123,12 @@ For any tweets: NO hashtags; NO URLs in first tweet.`,
                     ? responseData.content[0].text
                     : `No content generated for ${assetType}.`;
                 
-                // Add a header and the content to our aggregated result
-                const formattedContent = `\n\n## ${assetType}\n\n${assetContent}`;
-                allGeneratedContent += formattedContent;
+                // Store the asset content in our object
+                generatedAssets[assetType] = assetContent;
                 
                 // Show progress
                 output.markdown(`### ${assetType} completed`);
                 console.log(`${assetType} completed, length: ${assetContent.length} characters`);
-                
-                // Small delay between requests to avoid rate limits
-                await new Promise(resolve => {
-                    // Use a busy-wait since setTimeout isn't available
-                    const startTime = new Date().getTime();
-                    const waitTime = 1000; // 1 second
-                    while (new Date().getTime() - startTime < waitTime) {
-                        // Empty loop for waiting
-                    }
-                    resolve();
-                });
                 
             } catch (assetError) {
                 console.error(`Error processing ${assetType}:`, assetError);
@@ -142,8 +137,8 @@ For any tweets: NO hashtags; NO URLs in first tweet.`,
             }
         }
         
-        // Return the combined content from all assets
-        return allGeneratedContent;
+        // Return the object containing all assets
+        return generatedAssets;
     } catch (error) {
         console.error("Error in chunked processing:", error);
         throw error;
@@ -156,21 +151,95 @@ try {
     output.text("Breaking down the request into smaller pieces to avoid timeouts...");
     
     // Process content in chunks
-    const generatedContent = await processInChunks();
+    const generatedAssets = await processInChunks();
     
-    // Update the record with all the generated content
     if (!record) {
         console.log("Error: No record found to update");
         output.text("No record found.");
     } else {
-        // Update the record with the generated content
-        console.log("Updating record with combined content...");
-        await table.updateRecordAsync(record.id, {
-            "LLM-Created Content": generatedContent
-        });
-        console.log("Record successfully updated");
+        // Get the linked Petition record first
+        console.log("Getting linked Petition record...");
+        const linkedPetition = record?.getCellValue("Petition Title");
+        console.log("Linked petition:", linkedPetition ? "Found" : "Not found");
         
-        output.text("✅ Successfully created and saved all marketing assets!");
+        if (linkedPetition && Array.isArray(linkedPetition) && linkedPetition.length > 0) {
+            const petitionRecordId = linkedPetition[0].id;
+            console.log("Petition record ID:", petitionRecordId);
+            
+            if (petitionRecordId) {
+                // Get the Petitions table
+                console.log("Getting Petitions table...");
+                const petitionsTable = base.getTable("Petitions");
+                console.log("Getting petition record...");
+                const petitionRecord = await petitionsTable.selectRecordAsync(petitionRecordId);
+                console.log("Petition record retrieved");
+                
+                // Find the Campaign record that has this Petition in its Petitions field
+                console.log("Finding Campaign record with this Petition...");
+                console.log("Petition record ID to search for:", petitionRecordId);
+                
+                // Get all campaign records
+                console.log("Loading all Campaign records...");
+                const campaignQuery = await campaignsTable.selectRecordsAsync();
+                console.log("Total campaign records:", campaignQuery.records.length);
+                
+                // Manually filter to find campaigns that contain this petition
+                const matchingCampaigns = campaignQuery.records.filter(campaignRecord => {
+                    const petitions = campaignRecord.getCellValue("Petitions");
+                    if (Array.isArray(petitions)) {
+                        return petitions.some(p => p.id === petitionRecordId);
+                    }
+                    return false;
+                });
+                
+                console.log("Found", matchingCampaigns.length, "matching Campaign records");
+                
+                if (matchingCampaigns.length > 0) {
+                    // Log all found Campaign records for debugging
+                    matchingCampaigns.forEach((camp, index) => {
+                        console.log(`Campaign ${index + 1}:`, camp.id, camp.name);
+                    });
+                    
+                    const campaignRecordId = matchingCampaigns[0].id;
+                    console.log("Selected Campaign record ID for update:", campaignRecordId);
+                    console.log("Selected Campaign name:", matchingCampaigns[0].name);
+                    
+                    // Update the campaign record with each asset type
+                    const fieldsToUpdate = {};
+                    
+                    // Add each asset type to its respective field
+                    for (const assetType in generatedAssets) {
+                        fieldsToUpdate[assetType] = generatedAssets[assetType];
+                    }
+                    
+                    // Update the existing record in the Campaigns table
+                    await campaignsTable.updateRecordAsync(campaignRecordId, fieldsToUpdate);
+                    console.log("Campaign record successfully updated");
+                    
+                    output.text("✅ Successfully created all marketing assets and saved to existing Campaign record!");
+                } else {
+                    console.log("No Campaign record found with this Petition");
+                    output.text("⚠️ No matching Campaign record found. Please ensure the Petition is linked to a Campaign.");
+                }
+            }
+        } else {
+            console.log("No linked Petition found");
+            output.text("⚠️ No linked Petition found in the record. Please link a Petition first.");
+        }
+        
+        // Save all generated content to the original record as backup
+        console.log("Saving all content to LLM-Created Content field as backup...");
+        // Combine all assets into a formatted string
+        let allGeneratedContent = "";
+        for (const assetType in generatedAssets) {
+            allGeneratedContent += `\n\n## ${assetType}\n\n${generatedAssets[assetType]}`;
+        }
+        
+        // Update the original record with both status and content
+        await table.updateRecordAsync(record.id, {
+            "LLM-Created Content": allGeneratedContent
+        });
+        console.log("Backup content saved to automation record");
     }
 } catch (error) {
     console.error("Error during content generation:", error);
