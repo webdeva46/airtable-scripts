@@ -33,7 +33,8 @@ The JSON structure must follow this exact format:
   "title": "string",
   "topics": ["topic1", "topic2", "topic3", "topic4", "topic5"],  // Include up to 5 relevant topics
   "hook": "string",
-  "extendedDescription": "string",
+  "whyThisMatters": "string",
+  "thumbnailPrompt": "string",  // A detailed description for generating a thumbnail image
   "speakers": [
     {
       "name": "Speaker One",
@@ -90,6 +91,19 @@ The JSON structure must follow this exact format:
   ]  // Include up to 3 beneficiaries
 }
 
+For the thumbnailPrompt field, generate a description that transforms the speakers into a stylized ancient Greek 'dialogos' scene. The description should:
+- MUST include the names of all nominated speakers
+- Depict them as classical figures engaged in deep philosophical discourse
+- MUST maintain facial likeness and unique expressions
+- Render them in the style of an Attic red-figure vase painting or Hellenistic fresco
+- Include dramatic lighting, flowing robes (himation, chiton), and symbolic gestures
+- Feature a background with marble columns, olive trees, or scrolls
+- Emphasize emotional expression and storytelling through posture and gaze
+- Use a limited color palette (terracotta, black, white, gold) for authenticity
+- Add a modern flair in composition and contrast
+- Keep the overall look highly artistic, thoughtful, and repeatable as a thematic visual series
+- Make it more in the style of modern mythology, color, pop
+
 ---
 ## dLogos Brand Voice Guide:
 
@@ -114,7 +128,7 @@ Each petition must contain the following structured elements, **mirroring Airtab
 - **Title** (Max 100 characters) → A compelling, shareable title that captures both the **topic** and the **speakers**.
 - **Topics** → Up to five relevant tags for themes of the conversation.
 - **Hook** (Max 200 characters) → A high-energy, shareable hook that instantly makes users want to sign and share the petition.
-- **Extended Description** (Max 800 characters) → Explain why this conversation is urgent NOW, including relevant sources and context.
+- **Why This Matters** (Max 800 characters) → Explain why this conversation is urgent NOW, including relevant sources and context.
 - **Speakers (2-4 Required)** with:
     - **Name**
     - **Background**
@@ -231,8 +245,12 @@ if (!record) {
         updateFields["hook"] = parsedContent.hook;
     }
     
-    if (parsedContent.extendedDescription) {
-        updateFields["why this matters"] = parsedContent.extendedDescription;
+    if (parsedContent.whyThisMatters) {
+        updateFields["why this matters"] = parsedContent.whyThisMatters;
+    }
+
+    if (parsedContent.thumbnailPrompt) {
+        updateFields["thumbnail prompt"] = parsedContent.thumbnailPrompt;
     }
     
     // Handle speakers - assuming speakers field in Airtable wants a string
