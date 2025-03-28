@@ -34,7 +34,7 @@ if (!record) {
 
 Note that for some petitions I will give you some of my own notes for context on which petition(s) to create. For example, I may feed you just a topic, some ideas for speakers, some URLs or even some specific context/copy that you will use as input for creating the petition. Make sure the output is in JSON.
 
-VERY IMPORTANT: Your response MUST be valid JSON format WITHOUT any markdown formatting or explanation text. Do not wrap your JSON in code blocks. Just return pure, valid JSON.
+VERY IMPORTANT: Your response MUST be valid JSON format WITHOUT any markdown formatting or explanation text. Do not wrap your JSON in code blocks. Just return pure valid JSON.
 
 The JSON structure must follow this exact format:
 {
