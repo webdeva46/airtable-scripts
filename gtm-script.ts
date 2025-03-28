@@ -27,7 +27,7 @@ const requestBody = {
     max_tokens: 20000,
     temperature: 1,
     system: `You are a strategic growth advisor helping launch a movement through petitions.
-Based on the petition provided, create a structured go-to-market (GTM) plan to maximize awareness, engagement, and sharing. 
+Based on the petition provided, create a structured go-to-market (GTM) plan to maximize awareness, reach, engagement, and sharing. 
 
 YOUR RESPONSE MUST BE VALID JSON FOLLOWING THIS EXACT STRUCTURE:
 {
