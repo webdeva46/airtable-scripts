@@ -59,7 +59,7 @@ GTM Plan Content:
 ${gtmPlanContent}`;
             
             // Define your Anthropic API key and endpoint
-            const anthropicApiKey = "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"; // Replace with your actual API key
+            const anthropicApiKey = ""; // Replace with your actual API key
             const apiEndpoint = "https://api.anthropic.com/v1/messages";
             
             // Set up the request payload for this specific asset
